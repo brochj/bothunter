@@ -6,10 +6,10 @@ Created on Tue Sep 15 11:19:58 2020
 """
 
 import os
-import datetime
+# import datetime
 
-now = datetime.datetime.now()
-DATE = f'{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}-{now.second}'
+# now = datetime.datetime.now()
+# DATE = f'{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}-{now.second}'
 
 class Result:
     
