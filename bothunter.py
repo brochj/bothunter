@@ -23,27 +23,33 @@ api = tweepy.API(auth,wait_on_rate_limit=True, wait_on_rate_limit_notify =True)
 
 
 # HenioBottrel Vnia60277936 Ezequiasns GiffoniCristina
-search = '#BolsonaroOrgulhoDoBrasil'
-items = 600
+search = '#BolsonaroTemRazao'
+items = 1200
 
-accounts = []
 results = Result()
 bot = BotIdentifier(min_days=30, max_avg_tweets=200)
 
 for tweet in tweepy.Cursor(api.search, search).items(items):
     try:
-        
-        
         print(f'@ {tweet.user.screen_name}')
-
         
         if bot.analyse_user(tweet.user):
-            accounts.insert(0, tweet.user.screen_name)
+            print('#### ORA ORA')
             results.save_account(tweet.user.screen_name)
-            print(f'#########\nprovável bot : {tweet.user.name} id: @{tweet.user.screen_name}\n ############')
+            # api.update_status(f'@{tweet.user.screen_name} hmm ', in_reply_to_status_id=tweet.id)
+            api.update_status(f'🚨 Alerta! Possível BOT 🚨 \n'
+                              f'Usuário @{tweet.user.screen_name}\n'
+                              f'Teve uma média de {bot.avg_tweets} Tweets/dia durante seus {bot.days} dias de conta ativa.\n'
+                              f'Total de tweets da conta: {tweet.user.statuses_count}\n'
+                              f'Termo analisado: {search}')
+            print('Tweet Enviado !')            
             print(f'Tweet: {tweet.text}')
-            print(f'by: @{tweet.user.screen_name}' )
-            print(f'Joined {tweet.user.created_at}')
+            print(f'🚨 Alerta! Possível BOT 🚨 \n'
+                  f'Usuário @{tweet.user.screen_name}\n'
+                  f'Teve uma média de {bot.avg_tweets} Tweets/dia durante seus {bot.days} dias de conta ativa.\n'
+                  f'Total de tweets da conta: {tweet.user.statuses_count}\n'
+                  f'Termo analisado: {search}\n\n')
+            time.sleep(100)
         
     
         time.sleep(6)
