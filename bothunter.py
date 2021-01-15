@@ -7,6 +7,7 @@ Created on Mon Sep 14 20:43:59 2020
 
 import tweepy
 import time
+import random
 
 import credentials as c
 from bot_identifier import BotIdentifier
@@ -37,22 +38,26 @@ terms = [
     "socialismo",
     "capitalismo",
     "comunismo",
+    "comunista",
+    "comuna",
     "direita",
     "esquerda",
     "esquerdalha",
     "eleições",
     "urnaeletrônica",
+    "STF",
+    "salles"
 ]
 
 matched_hashtags = bot_actions.find_hashtags(terms)
 
 while not matched_hashtags:
-    print('Nenhuma Hashtag encontrada, ficarei procurando a cada 15 segundos')
+    print('Nenhuma Hashtag encontrada, ficarei procurando a cada 30 segundos')
     matched_hashtags = bot_actions.find_hashtags(terms)
-    time.sleep(15) # 75 requests/15min
-    
-search = matched_hashtags[0]
-items = 1200
+    time.sleep(30)  # 75 requests/15min
+
+search = random.choice(matched_hashtags)
+items = 1800
 
 print(f"Hashtags com termos fornecidos: {matched_hashtags}")
 print(f"Iniciando análise do termo: {search}")

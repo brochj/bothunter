@@ -5,13 +5,12 @@ Created on Tue Sep 15 17:06:29 2020
 @author: broch
 """
 
+
 class BotActions:
-    
+
     def __init__(self, api):
         self.api = api
-        
-    
-    
+
     def find_hashtags(self, terms, location=23424768):
         # BRAZIL_WOEID = 23424768
         trends = self.api.trends_place(location)
