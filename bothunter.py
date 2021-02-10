@@ -32,7 +32,7 @@ pprint(TERMS)
 matched_hashtags = bot_actions.find_hashtags(TERMS)
 
 while not matched_hashtags:
-    print('Nenhuma Hashtag encontrada, ficarei procurando a cada 30 segundos')
+    print("Nenhuma Hashtag encontrada, ficarei procurando a cada 30 segundos")
     matched_hashtags = bot_actions.find_hashtags(TERMS)
     time.sleep(30)  # 75 requests/15min
 

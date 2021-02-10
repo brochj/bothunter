@@ -7,7 +7,6 @@ Created on Tue Sep 15 17:06:29 2020
 
 
 class BotActions:
-
     def __init__(self, api):
         self.api = api
 
