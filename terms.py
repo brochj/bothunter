@@ -1,0 +1,27 @@
+# -*- coding: utf-8 -*-
+
+TERMS = [
+    "bolsonaro",
+    "jairbolsonaro",
+    "bozo",
+    "lula",
+    "moro",
+    "doria",
+    "Maia",
+    "FlavioBolsonaro",
+    "EduardoBolsonaro",
+    "presidente",
+    "socialismo",
+    "capitalismo",
+    "comunismo",
+    "comunista",
+    "comuna",
+    "direita",
+    "esquerda",
+    "esquerdalha",
+    "eleições",
+    "urnaeletrônica",
+    "STF",
+    "salles",
+    "lira",
+]
