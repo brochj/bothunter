@@ -24,4 +24,5 @@ TERMS = [
     "STF",
     "salles",
     "lira",
+    "cpi",
 ]
