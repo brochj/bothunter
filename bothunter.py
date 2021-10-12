@@ -10,6 +10,7 @@ import tweepy
 import time
 import random
 from pprint import pprint
+import logging
 
 import credentials as c
 from terms import TERMS
@@ -17,11 +18,13 @@ from bot_identifier import BotIdentifier
 from bot_actions import BotActions
 from save import Result
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 auth = tweepy.OAuthHandler(c.CONSUMER_KEY, c.CONSUMER_SECRET)
 auth.set_access_token(c.ACCESS_TOKEN, c.ACCESS_TOKEN_SECRET)
 
-api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+api = tweepy.API(auth)
 results = Result()
 bot = BotIdentifier(api, min_days=30, max_avg_tweets=200)
 bot_actions = BotActions(api)
@@ -36,13 +39,14 @@ while not matched_hashtags:
     matched_hashtags = bot_actions.find_hashtags(TERMS)
     time.sleep(30)  # 75 requests/15min
 
-search = random.choice(matched_hashtags)
+term = random.choice(matched_hashtags)
+# term = "#Brasillivre"  # just for testing
 items = 1800
 
 print(f"Hashtags com termos fornecidos: {matched_hashtags}")
-print(f"Iniciando análise do termo: {search}")
+print(f"Iniciando análise do termo: {term}")
 
-for tweet in tweepy.Cursor(api.search, search).items(items):
+for tweet in tweepy.Cursor(api.search_tweets, term).items(items):
     try:
         print(f"@ {tweet.user.screen_name}")
 
@@ -54,7 +58,7 @@ for tweet in tweepy.Cursor(api.search, search).items(items):
                 f"Usuário @{tweet.user.screen_name}\n"
                 f"Teve uma média de {bot.avg_tweets} Tweets/dia durante seus {bot.days} dias de conta ativa.\n"
                 f"Total de tweets da conta: {tweet.user.statuses_count}\n"
-                f"Termo analisado: {search}\n\n"
+                f"Termo analisado: {term}\n\n"
             )
             api.update_status(tweet_text)
 
@@ -65,7 +69,7 @@ for tweet in tweepy.Cursor(api.search, search).items(items):
             time.sleep(100)
 
         time.sleep(6)
-    except tweepy.TweepError as e:
+    except tweepy.TweepyException as e:
         print(e.reason)
     except StopIteration:
         break
