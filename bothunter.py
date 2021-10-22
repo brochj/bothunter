@@ -6,17 +6,17 @@ Created on Mon Sep 14 20:43:59 2020
 """
 
 
-import tweepy
-import time
-import random
 from pprint import pprint
 import logging
+import random
+import time
+import tweepy
 
-import credentials as c
-from terms import TERMS
-from bot_identifier import BotIdentifier
 from bot_actions import BotActions
+from bot_identifier import BotIdentifier
 from save import Result
+from terms import TERMS
+import credentials as c
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
