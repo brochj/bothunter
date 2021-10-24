@@ -41,8 +41,8 @@ class BotIdentifier:
         logger.info(f"avg_tweets:".rjust(36) + f" {self.avg_tweets}")
         return self.avg_tweets > self.max_avg_tweets
 
-    # def _analyse_created_at(self, user):
-    #     return self.days < self.min_days
+    def _analyse_created_at(self, user):
+        return self.days < self.min_days
 
     def _last_20_tweets_are_retweets(self):
         timeline = self.api.user_timeline()
