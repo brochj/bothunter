@@ -40,7 +40,7 @@ while not matched_hashtags:
     time.sleep(30)  # 75 requests/15min
 
 term = random.choice(matched_hashtags)
-# term = "#Brasillivre"  # just for testing
+# term = "#Bolsonaro2022"  # just for testing
 items = 1800
 
 print(f"Hashtags com termos fornecidos: {matched_hashtags}")
