@@ -15,8 +15,12 @@ import tweepy
 from bot_actions import BotActions
 from bot_identifier import BotIdentifier
 from save import Result
-from terms import TERMS
+
+# from terms import TERMS
+from tools import read_words_list
 import credentials as c
+
+TERMS = read_words_list("terms")
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -35,9 +39,9 @@ pprint(TERMS)
 matched_hashtags = bot_actions.find_hashtags(TERMS)
 
 while not matched_hashtags:
-    print("Nenhuma Hashtag encontrada, ficarei procurando a cada 30 segundos")
+    print("Nenhuma Hashtag encontrada, ficarei procurando a cada 120 segundos")
     matched_hashtags = bot_actions.find_hashtags(TERMS)
-    time.sleep(30)  # 75 requests/15min
+    time.sleep(120)  # 75 requests/15min
 
 term = random.choice(matched_hashtags)
 # term = "#Bolsonaro2022"  # just for testing
