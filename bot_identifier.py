@@ -26,7 +26,7 @@ class BotIdentifier:
         self.user = user
         self.days = f.calculate_days_from_now(user.created_at)
         cd1 = self._analyse_total_tweets(user)
-        cd2 = self._last_20_tweets_are_retweets()
+        cd2 = True | self._last_20_tweets_are_retweets()
         # cd3 = self._analyse_created_at(user)
         logger.info(f"Account age:".rjust(36) + f" {self.days} days")
         logger.debug(
