@@ -16,6 +16,7 @@ import tweepy
 import credentials as c
 from bot_actions import BotActions
 from bot_identifier import BotIdentifier
+from hunting_session import HuntingSession
 from save import Result
 
 # from terms import TERMS
@@ -23,8 +24,13 @@ from tools import read_words_list
 
 TERMS = read_words_list("terms")
 
-logger = logging.getLogger()
+logger = logging.getLogger("bothunter")
 logger.setLevel(logging.INFO)
+# hiding these loggers
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("oauthlib").setLevel(logging.WARNING)
+logging.getLogger("requests_oauthlib").setLevel(logging.WARNING)
+logging.getLogger("tweepy").setLevel(logging.INFO)
 
 auth = tweepy.OAuthHandler(c.CONSUMER_KEY, c.CONSUMER_SECRET)
 auth.set_access_token(c.ACCESS_TOKEN, c.ACCESS_TOKEN_SECRET)
@@ -33,6 +39,7 @@ api = tweepy.API(auth)
 results = Result()
 bot = BotIdentifier(api, min_days=30, max_avg_tweets=200)
 bot_actions = BotActions(api)
+
 
 print("#" * 40)
 print("Buscando Hashtags que contém um dos seguintes termos")
@@ -48,23 +55,26 @@ term = random.choice(matched_hashtags)
 # term = "#Bolsonaro2022"  # just for testing
 items = 1800
 
+session = HuntingSession(term)
+
 print(f"Hashtags com termos fornecidos: {matched_hashtags}")
 print(f"Iniciando análise do termo: {term}")
 
 last_tweeted_message = ""
-users_analysed: list[str] = list()
 
 for tweet in tweepy.Cursor(api.search_tweets, term).items(items):
-    if tweet.user.screen_name in users_analysed:
+
+    if tweet.user.screen_name in session.analyzed_accounts:
         print("Esse último tweet já foi sobre essa conta.")
         print("Passando para o próximo\n\n")
         continue
 
+    session.add_analyzed_account(tweet.user.screen_name)
     try:
-        print(f"@ {tweet.user.screen_name}")
+        print(f"{session.total_accounts_analyzed()} - @ {tweet.user.screen_name}")
 
         if bot.analyse_user(tweet.user):
-            users_analysed.append(tweet.user.screen_name)
+            session.add_possible_bot(tweet.user.screen_name)
 
             results.save_account(tweet.user.screen_name)
             tweet_text = (
@@ -76,7 +86,9 @@ for tweet in tweepy.Cursor(api.search_tweets, term).items(items):
             )
 
             if tweet_text == last_tweeted_message:
-                print("O último tweet já foi sobre essa conta.")
+                print(
+                    f"O último tweet já foi sobre essa conta. (@{tweet.user.screen_name})"
+                )
                 print("Passando para o próximo\n\n")
                 continue
 
@@ -94,3 +106,10 @@ for tweet in tweepy.Cursor(api.search_tweets, term).items(items):
         print(e.reason)
     except StopIteration:
         break
+    except KeyboardInterrupt:
+        print(session)
+        break
+
+print()
+print()
+print(session)
