@@ -6,19 +6,20 @@ Created on Mon Sep 14 20:43:59 2020
 """
 
 
-from pprint import pprint
 import logging
 import random
 import time
+from pprint import pprint
+
 import tweepy
 
+import credentials as c
 from bot_actions import BotActions
 from bot_identifier import BotIdentifier
 from save import Result
 
 # from terms import TERMS
 from tools import read_words_list
-import credentials as c
 
 TERMS = read_words_list("terms")
 
@@ -50,11 +51,20 @@ items = 1800
 print(f"Hashtags com termos fornecidos: {matched_hashtags}")
 print(f"Iniciando análise do termo: {term}")
 
+last_tweeted_message = ""
+users_analysed: list[str] = list()
+
 for tweet in tweepy.Cursor(api.search_tweets, term).items(items):
+    if tweet.user.screen_name in users_analysed:
+        print("Esse último tweet já foi sobre essa conta.")
+        print("Passando para o próximo\n\n")
+        continue
+
     try:
         print(f"@ {tweet.user.screen_name}")
 
         if bot.analyse_user(tweet.user):
+            users_analysed.append(tweet.user.screen_name)
 
             results.save_account(tweet.user.screen_name)
             tweet_text = (
@@ -64,6 +74,13 @@ for tweet in tweepy.Cursor(api.search_tweets, term).items(items):
                 f"Total de tweets da conta: {tweet.user.statuses_count}\n"
                 f"Termo analisado: {term}\n\n"
             )
+
+            if tweet_text == last_tweeted_message:
+                print("O último tweet já foi sobre essa conta.")
+                print("Passando para o próximo\n\n")
+                continue
+
+            last_tweeted_message = tweet_text
             api.update_status(tweet_text)
 
             print("#" * 40 + "\n")
