@@ -345,10 +345,12 @@ class HunterBotDataAnalyzer(DataAnalyzer):
             return total_tweets
 
     def _print_bot_analysis(self, user, cd1: bool, cd2: bool, cd3: bool = False):
-        max_str = 45
         tweets_total = f"{user.statuses_count:,}".replace(",", ".")
         username = f"@ {user.screen_name}"
+        account_age = f"{self.account_age_days}"
+
         colunm_size = 20  # min 20
+
         self.logger.info(
             username.rjust(colunm_size)
             + " | "
@@ -356,7 +358,12 @@ class HunterBotDataAnalyzer(DataAnalyzer):
             + " | "
             + (tweets_total.rjust(11) + " Tweets").center(colunm_size)
             + " | "
+            + (account_age.rjust(4) + " days (acc age)").center(colunm_size)
+            + " | "
         )
+
+        max_str = 45
+
         self.logger.debug("-" * max_str * 2)
         self.logger.debug(
             f"Account age: ".rjust(max_str) + f"{self.account_age_days} days"
