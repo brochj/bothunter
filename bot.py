@@ -1,5 +1,6 @@
 import logging
 import pprint
+import random
 import time
 from abc import ABC, abstractmethod
 from logging import Logger
@@ -10,8 +11,6 @@ import tweepy
 import config
 import credentials as c
 import functions as f
-from bot_actions import BotActions
-from bot_identifier import BotIdentifier
 from hunting_session import HuntingSession
 
 
@@ -96,31 +95,114 @@ class Api:
 
 
 class HunterBot(Bot):
-    def start(self, terms) -> None:
-        print("I'm not gonna do anything right now")
-        self.find_terms_to_analyze(terms)
+    def start(self, terms: list[str]) -> None:
+        self.logger.info("Ok Boss, let's start the work!!\n")
 
-    def find_terms_to_analyze(self, terms: list[str]) -> list[str]:
+        term = self.choose_a_term_on_trending_topics(terms)
+
+        tweets = tweepy.Cursor(self.api.search_tweets, term).items(1000)
+
+        for tweet in tweets:
+            if self.user_has_been_analyzed(tweet.user.screen_name):
+                time.sleep(2)
+                continue
+
+            try:
+                if self.is_possible_bot(tweet.user):
+
+                    # results.save_account(tweet.user.screen_name)
+                    tweet_text = self.create_alert_tweet_message(tweet.user)
+                    self.session.last_tweet = tweet_text
+
+                    self.tweet_alert(tweet_text)
+                    time.sleep(100)
+
+                time.sleep(6)
+            except tweepy.errors.Unauthorized as e:
+                self.logger.error(e)
+            except tweepy.TweepyException as e:
+                print(e)
+            except StopIteration:
+                break
+            except KeyboardInterrupt:
+                print(self.session)
+                break
+
+    def choose_a_term_on_trending_topics(self, terms: list[str]):
+        matched_terms = self.find_terms_to_analyze(terms)
+        return self.pick_one(matched_terms)
+
+    def find_terms_to_analyze(
+        self, terms: list[str], refresh_seconds: int = 120
+    ) -> list[str]:
         self.logger.info("#" * 40)
-        self.logger.info("Buscando Hashtags que contém um dos seguintes termos")
+        self.logger.info("Buscando Trends que contém um dos seguintes termos")
         self.logger.info(terms)
-        matched_terms = list()
-        while not matched_terms:
-            self.logger.info(
-                "Nenhuma tesmo encontrado, ficarei procurando a cada 120 segundos"
-            )
+        matched_terms = []
+        while True:
             trending_topics = self.actions.get_trending_topics()
             matched_terms = self.data_analyzer.find_matched_terms(
                 terms,
                 trending_topics,
             )
-            time.sleep(120)  # 75 requests/15min
+            if matched_terms:
+                break
+
+            self.logger.info(
+                f"Nenhum termo encontrado, vou a procurar daqui a {refresh_seconds} segundos"
+            )
+            time.sleep(refresh_seconds)  # 75 requests/15min
+
+        self.logger.info(f"Termos encontrados: {matched_terms}")
         return matched_terms
+
+    def pick_one(self, terms: list[str]) -> str:
+        choosed = random.choice(terms)
+        self.logger.info(f"Termo escolhido: {choosed}")
+        self.session.term = choosed
+        return choosed
+
+    def user_has_been_analyzed(self, user: str) -> bool:
+        result = user in self.session.analyzed_accounts
+        if result:
+            self.logger.debug(f"Esse usário (@ {user}) já foi analisado nessa sessão.")
+            self.logger.debug("Passando para o próximo...")
+        else:
+            self.session.add_analyzed_account(user)
+        return result
+
+    def is_possible_bot(self, user) -> bool:
+        timeline = self.actions.get_user_timeline(user.screen_name)
+        result = self.data_analyzer.is_the_user_a_possible_bot(user, timeline)
+        if result:
+            self.logger.debug(f"@ {user.screen_name} é um possível bot!")
+            self.session.add_possible_bot(user.screen_name)
+        return result
+
+    def create_alert_tweet_message(self, user) -> str:
+        message = (
+            f"🚨 Alerta! Possível BOT 🚨 \n"
+            f"Usuário @{user.screen_name}\n"
+            f"Teve uma média de {self.data_analyzer.avg_tweets} Tweets/dia durante seus {self.data_analyzer.account_age_days} dias de conta ativa.\n"
+            f"Total de tweets da conta: {user.statuses_count:,}".replace(",", ".")
+            + "\n"
+            f"Termo analisado: {self.session.term}\n\n"
+        )
+        return message
+
+    def tweet_alert(self, tweet_text: str) -> None:
+        self.actions.tweet(tweet_text)
+
+        self.logger.info("#" * 40 + "\n")
+        self.logger.info("Tweet Enviado !".center(40))
+        self.logger.info(tweet_text)
 
 
 class HunterBotBuilder(BotBuilder):
     def build_logger(self):
         self.logger = logging.getLogger("bot_hunter")
+        self.logger.addHandler(logging.StreamHandler())
+        self.logger.setLevel(logging.INFO)
         return self
 
     def build_api(self):
@@ -139,7 +221,8 @@ class HunterBotBuilder(BotBuilder):
         return self
 
     def build_data_analyzer(self):
-        self.data_analyze = HunterBotDataAnalyzer()
+        self.data_analyze = HunterBotDataAnalyzer(max_avg_tweets=config.MAX_AVG_TWEETS)
+        self.data_analyze.logger = self.logger
         return self
 
     def get_result(self):
@@ -206,15 +289,24 @@ class HunterBotDataAnalyzer(DataAnalyzer):
     def extract_hashtags(self, trending_topics: list[dict]) -> list[str]:
         trends = self.extract_trends(trending_topics)
         hashtags = [t["name"] for t in trends if t["name"].startswith("#")]
+        self.logger.debug(f"hashtags: {hashtags}")
         return hashtags
 
-    def extract_trends(self, trending_topics: list[dict]) -> list[str]:
-        return trending_topics[0]["trends"]
+    def extract_trends(self, trending_topics: list[dict]) -> list[dict]:
+        trends = trending_topics[0]["trends"]
+        self.logger.debug(f"Trends: {trends}")
+        return trends
+
+    def extract_trends_strings(self, trending_topics: list[dict]) -> list[str]:
+        trends_dicts = self.extract_trends(trending_topics)
+        trends_string = [t["name"] for t in trends_dicts]
+        self.logger.info(f"Trends Strings: {trends_string}")
+        return trends_string
 
     def find_matched_terms(self, terms: list[str], trending_topics: list[dict]):
-        trends = self.extract_trends(trending_topics)
+        trends = self.extract_trends_strings(trending_topics)
         matched_terms = [
-            ht for term in terms for ht in trends if term.lower() in ht["name"].lower()
+            ht for term in terms for ht in trends if term.lower() in ht.lower()
         ]
         return matched_terms
 
@@ -230,15 +322,14 @@ class HunterBotDataAnalyzer(DataAnalyzer):
         self.account_age_days = f.calc_days_until_today(user.created_at)
         cd1 = self._analyse_total_tweets(user)
         cd2 = True | self._is_the_last_20_tweets_are_retweets(user_timeline)
-        # cd3 = self._is_account_age_less_than_minimum_limit(user)
-        self._print_bot_analysis(cd1, cd2)
+        # cd3 = self.is_the_account_age_less_than_the_minimum_threshold(user)
+        self._print_bot_analysis(user, cd1, cd2)
         return cd1 and cd2
 
     def _analyse_total_tweets(self, user):
         self.avg_tweets = self._avg_tweets_per_day(
             user.statuses_count, self.account_age_days
         )
-        self.logger.info(f"avg_tweets:".rjust(36) + f" {self.avg_tweets}")
         return self.avg_tweets > self.max_avg_tweets
 
     def is_the_account_age_less_than_the_minimum_threshold(self):
@@ -253,11 +344,34 @@ class HunterBotDataAnalyzer(DataAnalyzer):
         except ZeroDivisionError:
             return total_tweets
 
-    def _print_bot_analysis(self, cd1: bool, cd2: bool, cd3: bool):
-        self.logger.debug(f"Account age:".rjust(36) + f" {self.account_age_days} days")
-        self.logger.debug(
-            f"avg_tweets > max_avg_tweets ({self.max_avg_tweets}):".rjust(35)
-            + f" {cd1}"
+    def _print_bot_analysis(self, user, cd1: bool, cd2: bool, cd3: bool = False):
+        max_str = 45
+        tweets_total = f"{user.statuses_count:,}".replace(",", ".")
+        username = f"@ {user.screen_name}"
+        colunm_size = 20  # min 20
+        self.logger.info(
+            username.rjust(colunm_size)
+            + " | "
+            + (f"{self.avg_tweets}".rjust(4) + f" tweets/day").center(colunm_size)
+            + " | "
+            + (tweets_total.rjust(11) + " Tweets").center(colunm_size)
+            + " | "
         )
-        self.logger.debug(f"_is_account_age_less_than_minimum_limit: {cd3}")
-        self.logger.debug(f"last_20_tweets_are_retweets:".rjust(35) + f" {cd2}")
+        self.logger.debug("-" * max_str * 2)
+        self.logger.debug(
+            f"Account age: ".rjust(max_str) + f"{self.account_age_days} days"
+        )
+        self.logger.debug(
+            f"Tweets Total: ".rjust(max_str)
+            + f"{user.statuses_count:,}".replace(",", ".")
+        )
+        self.logger.debug(
+            f"Average Tweets: ".rjust(max_str) + f"{self.avg_tweets} tweets/day"
+        )
+        self.logger.debug(
+            f"Avg. Tweets > Max Avg. Tweets ({self.max_avg_tweets}): ".rjust(max_str)
+            + str(cd1)
+        )
+        # self.logger.debug(f"is_the_account_age_less_than_the_minimum_threshold: {cd3}")
+        # self.logger.debug(f"last_20_tweets_are_retweets: ".rjust(max_str) + str(cd2))
+        self.logger.debug("-" * max_str * 2)

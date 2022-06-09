@@ -6,6 +6,7 @@ class HuntingSession:
     term: str = field(default=str())
     analyzed_accounts: set[str] = field(default_factory=set)
     possible_bots_found: set[str] = field(default_factory=set)
+    last_tweet: str = field(default=str())
 
     def total_accounts_analyzed(self) -> int:
         return len(self.analyzed_accounts)
