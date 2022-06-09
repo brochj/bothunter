@@ -37,8 +37,10 @@ auth.set_access_token(c.ACCESS_TOKEN, c.ACCESS_TOKEN_SECRET)
 
 api = tweepy.API(auth)
 results = Result()
-bot = BotIdentifier(api, min_days=30, max_avg_tweets=200)
-bot_actions = BotActions(api)
+bot = BotIdentifier(min_days=30, max_avg_tweets=200)
+bot.api = api
+bot_actions = BotActions()
+bot_actions.api = api
 
 
 print("#" * 40)
@@ -55,7 +57,8 @@ term = random.choice(matched_hashtags)
 # term = "#Bolsonaro2022"  # just for testing
 items = 1800
 
-session = HuntingSession(term)
+session = HuntingSession()
+session.term = term
 
 print(f"Hashtags com termos fornecidos: {matched_hashtags}")
 print(f"Iniciando análise do termo: {term}")
@@ -65,8 +68,11 @@ last_tweeted_message = ""
 for tweet in tweepy.Cursor(api.search_tweets, term).items(items):
 
     if tweet.user.screen_name in session.analyzed_accounts:
-        print("Esse último tweet já foi sobre essa conta.")
+        print(
+            f"Esse último usário analisado já foi sobre essa conta.(@ {tweet.user.screen_name})"
+        )
         print("Passando para o próximo\n\n")
+        time.sleep(2)
         continue
 
     session.add_analyzed_account(tweet.user.screen_name)

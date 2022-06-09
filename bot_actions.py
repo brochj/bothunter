@@ -4,11 +4,14 @@ Created on Tue Sep 15 17:06:29 2020
 
 @author: broch
 """
+import tweepy
 
 
 class BotActions:
-    def __init__(self, api):
-        self.api = api
+    """This class contains the methods that interact with the twitter api"""
+
+    def __init__(self):
+        self.api: tweepy.API
 
     def find_hashtags(self, terms, location=23424768):
         # BRAZIL_WOEID = 23424768

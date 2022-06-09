@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 
 
-@dataclass
+@dataclass()
 class HuntingSession:
-    term: str
+    term: str = field(default=str())
     analyzed_accounts: set[str] = field(default_factory=set)
     possible_bots_found: set[str] = field(default_factory=set)
 

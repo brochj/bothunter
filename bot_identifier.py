@@ -4,8 +4,11 @@ Created on Tue Sep 15 13:45:22 2020
 
 @author: broch
 """
-import functions as f
 import logging
+
+import tweepy
+
+import functions as f
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -14,8 +17,8 @@ logger.setLevel(logging.WARNING)
 
 
 class BotIdentifier:
-    def __init__(self, api, min_days, max_avg_tweets):
-        self.api = api
+    def __init__(self, min_days=30, max_avg_tweets=200):
+        self.api: tweepy.API
         self.min_days = min_days
         self.max_avg_tweets = max_avg_tweets
         self.avg_tweets = 0
@@ -24,7 +27,7 @@ class BotIdentifier:
 
     def analyse_user(self, user):
         self.user = user
-        self.days = f.calculate_days_from_now(user.created_at)
+        self.days = f.calc_days_until_today(user.created_at)
         cd1 = self._analyse_total_tweets(user)
         cd2 = True | self._last_20_tweets_are_retweets()
         # cd3 = self._analyse_created_at(user)
