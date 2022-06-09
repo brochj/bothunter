@@ -1,11 +1,7 @@
-from bot import Director, HunterBot, HunterBotBuilder
-from tools import read_words_list
-
-# hiding these loggers
-# logging.getLogger("urllib3").setLevel(logging.WARNING)
-# logging.getLogger("oauthlib").setLevel(logging.WARNING)
-# logging.getLogger("requests_oauthlib").setLevel(logging.WARNING)
-# logging.getLogger("tweepy").setLevel(logging.INFO)
+from src.core.bot_builder import Director
+from src.hunter_bot.hunter_bot import HunterBot
+from src.hunter_bot.hunter_bot_builder import HunterBotBuilder
+from src.utils.file import read_words_list
 
 TERMS = read_words_list("terms")
 
