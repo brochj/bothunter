@@ -7,6 +7,7 @@ from src.core.bot_builder import BotBuilder
 from src.hunter_bot.hunter_bot import HunterBot
 from src.hunter_bot.hunter_bot_actions import HunterBotActions
 from src.hunter_bot.hunter_bot_data_analyzer import HunterBotDataAnalyzer
+from src.hunter_bot.hunter_bot_writer import UserSqlite
 from src.hunter_bot.hunting_session import HuntingSession
 
 
@@ -40,7 +41,16 @@ class HunterBotBuilder(BotBuilder):
         self.data_analyzer.logger = self.logger
         return self
 
+    def build_writer(self):
+        self.writer = UserSqlite(config.DB_NAME)
+        return self
+
     def get_result(self):
         return HunterBot(
-            self.logger, self.api, self.session, self.actions, self.data_analyzer
+            self.logger,
+            self.api,
+            self.session,
+            self.actions,
+            self.data_analyzer,
+            self.writer,
         )

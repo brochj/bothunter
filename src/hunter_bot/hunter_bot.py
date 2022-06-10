@@ -9,6 +9,7 @@ from src.core.bot import Bot
 from src.core.user import User
 from src.hunter_bot.hunter_bot_actions import HunterBotActions
 from src.hunter_bot.hunter_bot_data_analyzer import HunterBotDataAnalyzer
+from src.hunter_bot.hunter_bot_writer import UserSqlite
 from src.hunter_bot.hunting_session import HuntingSession
 
 
@@ -20,6 +21,7 @@ class HunterBot(Bot):
         session: HuntingSession,
         actions: HunterBotActions,
         data_analyzer: HunterBotDataAnalyzer,
+        writer: UserSqlite,
     ) -> None:
         self.logger = logger
         self.api = api
@@ -27,8 +29,9 @@ class HunterBot(Bot):
         self.actions = actions
         self.data_analyzer = data_analyzer
         self.user: User
+        self.writer = writer
 
-    def map_user(self, tweepy_user):
+    def create_user(self, tweepy_user):
         return User(
             id=tweepy_user.id,
             id_str=tweepy_user.id_str,
@@ -45,7 +48,9 @@ class HunterBot(Bot):
             favourites_count=tweepy_user.favourites_count,
             statuses_count=tweepy_user.statuses_count,
             created_at=tweepy_user.created_at,
-            profile_banner_url=tweepy_user.profile_banner_url,
+            profile_banner_url=tweepy_user.profile_banner_url
+            if hasattr(tweepy_user, "profile_banner_url")
+            else "",
             profile_image_url_https=tweepy_user.profile_image_url_https,
             default_profile=tweepy_user.default_profile,
             default_profile_image=tweepy_user.default_profile_image,
@@ -64,20 +69,23 @@ class HunterBot(Bot):
                 time.sleep(2)
                 continue
 
-            self.user = self.map_user(tweet.user)
+            self.user = self.create_user(tweet.user)
+            self.writer.save(self.user)
 
             try:
-                if self.is_possible_bot(tweet.user):
+                if not self.is_possible_bot(tweet.user):
+                    time.sleep(6)
+                    continue
 
-                    # results.save_account(tweet.user.screen_name)
-                    tweet_text = self.create_alert_tweet_message(tweet.user)
-                    self.session.last_tweet = tweet_text
+                # results.save_account(tweet.user.screen_name)
+                tweet_text = self.create_alert_tweet_message(tweet.user)
+                self.session.last_tweet = tweet_text
 
-                    self.tweet_alert(tweet_text)
-                    time.sleep(100)
+                self.tweet_alert(tweet_text)
+                time.sleep(100)
 
-                time.sleep(6)
             except tweepy.errors.Unauthorized as e:
+                # User has blocked the bot
                 self.logger.error(e)
             except tweepy.TweepyException as e:
                 print(e)
@@ -152,6 +160,7 @@ class HunterBot(Bot):
     def tweet_alert(self, tweet_text: str) -> None:
         self.actions.tweet(tweet_text)
 
-        self.logger.info("#" * 40 + "\n")
-        self.logger.info("Tweet Enviado !".center(40))
+        self.logger.info("#" * 40)
+        self.logger.info("Tweet sent !".center(40))
         self.logger.info(tweet_text)
+        self.logger.info("#" * 40)

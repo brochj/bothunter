@@ -25,6 +25,10 @@ class BotBuilder(ABC):
         return self
 
     @abstractmethod
+    def build_writer(self):
+        return self
+
+    @abstractmethod
     def get_result(self) -> Bot:
         pass
 
@@ -38,5 +42,6 @@ class Director:
             .build_session()
             .build_actions()
             .build_data_analyzer()
+            .build_writer()
             .get_result()
         )
