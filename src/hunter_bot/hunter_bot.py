@@ -1,11 +1,57 @@
 import random
 import time
+from datetime import datetime
+from logging import Logger
+from pprint import pprint
 
 import tweepy
 from src.core.bot import Bot
+from src.core.user import User
+from src.hunter_bot.hunter_bot_actions import HunterBotActions
+from src.hunter_bot.hunter_bot_data_analyzer import HunterBotDataAnalyzer
+from src.hunter_bot.hunting_session import HuntingSession
 
 
 class HunterBot(Bot):
+    def __init__(
+        self,
+        logger: Logger,
+        api: tweepy.API,
+        session: HuntingSession,
+        actions: HunterBotActions,
+        data_analyzer: HunterBotDataAnalyzer,
+    ) -> None:
+        self.logger = logger
+        self.api = api
+        self.session = session
+        self.actions = actions
+        self.data_analyzer = data_analyzer
+        self.user: User
+
+    def map_user(self, tweepy_user):
+        return User(
+            id=tweepy_user.id,
+            id_str=tweepy_user.id_str,
+            name=tweepy_user.name,
+            screen_name=tweepy_user.screen_name,
+            location=tweepy_user.location,
+            url=tweepy_user.url,
+            description=tweepy_user.description,
+            protected=tweepy_user.protected,
+            verified=tweepy_user.verified,
+            followers_count=tweepy_user.followers_count,
+            friends_count=tweepy_user.friends_count,
+            listed_count=tweepy_user.listed_count,
+            favourites_count=tweepy_user.favourites_count,
+            statuses_count=tweepy_user.statuses_count,
+            created_at=tweepy_user.created_at,
+            profile_banner_url=tweepy_user.profile_banner_url,
+            profile_image_url_https=tweepy_user.profile_image_url_https,
+            default_profile=tweepy_user.default_profile,
+            default_profile_image=tweepy_user.default_profile_image,
+            first_scrape=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        )
+
     def start(self, terms: list[str]) -> None:
         self.logger.info("Ok Boss, let's start the work!!\n")
 
@@ -17,6 +63,8 @@ class HunterBot(Bot):
             if self.user_has_been_analyzed(tweet.user.screen_name):
                 time.sleep(2)
                 continue
+
+            self.user = self.map_user(tweet.user)
 
             try:
                 if self.is_possible_bot(tweet.user):

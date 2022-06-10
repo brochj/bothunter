@@ -36,11 +36,11 @@ class HunterBotBuilder(BotBuilder):
         return self
 
     def build_data_analyzer(self):
-        self.data_analyze = HunterBotDataAnalyzer(max_avg_tweets=config.MAX_AVG_TWEETS)
-        self.data_analyze.logger = self.logger
+        self.data_analyzer = HunterBotDataAnalyzer(max_avg_tweets=config.MAX_AVG_TWEETS)
+        self.data_analyzer.logger = self.logger
         return self
 
     def get_result(self):
         return HunterBot(
-            self.logger, self.api, self.session, self.actions, self.data_analyze
+            self.logger, self.api, self.session, self.actions, self.data_analyzer
         )

@@ -7,4 +7,6 @@ TERMS = read_words_list("terms")
 
 bot_hunter: HunterBot = Director.construct_basic_bot(HunterBotBuilder())
 
-bot_hunter.start(TERMS)
+# bot_hunter.start(TERMS)
+
+bot_hunter.map_user()

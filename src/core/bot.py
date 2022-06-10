@@ -19,20 +19,6 @@ class DataAnalyzer(ABC):
 
 
 class Bot(ABC):
-    def __init__(
-        self,
-        logger: Logger,
-        api: tweepy.API,
-        session: Session,
-        actions: Actions,
-        data_analyzer: DataAnalyzer,
-    ) -> None:
-        self.logger = logger
-        self.api = api
-        self.session = session
-        self.actions = actions
-        self.data_analyzer = data_analyzer
-
     @abstractmethod
     def start(self) -> None:
         pass
