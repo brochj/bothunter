@@ -101,12 +101,14 @@ class HunterBot(Bot):
             except tweepy.errors.Unauthorized as e:
                 # User has blocked the bot
                 self.logger.error(e)
+                break
 
                 # Twitter blocks the bot
                 # 261 - Application cannot perform write actions.
                 # Contact Twitter Platform Operations through https://help.twitter.com/forms/platform.
             except tweepy.TweepyException as e:
-                print(e)
+                self.logger.error(e)
+                break
             except StopIteration:
                 break
             except KeyboardInterrupt:
