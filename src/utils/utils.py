@@ -5,6 +5,9 @@ Created on Tue Sep 15 13:47:52 2020
 @author: broch
 """
 import datetime
+import time
+
+from tqdm import trange
 
 
 def calc_days_until_today(date):
@@ -14,3 +17,12 @@ def calc_days_until_today(date):
     today = datetime.datetime.today().replace(tzinfo=date.tzinfo)
     interval = today - date  # returns a timedelta object
     return interval.days
+
+
+def wait_secs(secs: int, show_progress_bar: bool = True):
+    if not show_progress_bar:
+        time.sleep(secs)
+        return
+
+    for i in trange(secs):
+        time.sleep(1)

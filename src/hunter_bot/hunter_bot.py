@@ -12,6 +12,7 @@ from src.hunter_bot.hunter_bot_actions import HunterBotActions
 from src.hunter_bot.hunter_bot_data_analyzer import HunterBotDataAnalyzer
 from src.hunter_bot.hunter_bot_writer import UserSqlite
 from src.hunter_bot.hunting_session import HuntingSession
+from src.utils.utils import wait_secs
 
 
 class HunterBot(Bot):
@@ -67,7 +68,7 @@ class HunterBot(Bot):
 
         for tweet in tweets:
             if self.user_has_been_analyzed(tweet.user.screen_name):
-                time.sleep(4)
+                wait_secs(4)
                 continue
 
             self.user = self.create_user(tweet.user)
@@ -81,8 +82,7 @@ class HunterBot(Bot):
 
             try:
                 if not self.is_possible_bot(tweet.user):
-
-                    time.sleep(6)
+                    wait_secs(6)
                     continue
 
                 # results.save_account(tweet.user.screen_name)
@@ -91,12 +91,12 @@ class HunterBot(Bot):
                 # Prevent duplicate tweet
                 if self.session.last_tweet == tweet_text:
                     self.logger.info("Último tweet enviado é igual...não vou tweetar")
-                    time.sleep(6)
+                    wait_secs(6)
                     continue
 
                 self.session.last_tweet = tweet_text
                 self.tweet_alert(tweet_text)
-                time.sleep(100)
+                wait_secs(100)
 
             except tweepy.errors.Unauthorized as e:
                 # User has blocked the bot
@@ -138,7 +138,7 @@ class HunterBot(Bot):
             self.logger.info(
                 f"Nenhum termo encontrado, vou a procurar daqui a {refresh_seconds} segundos"
             )
-            time.sleep(refresh_seconds)  # 75 requests/15min
+            wait_secs(refresh_seconds)  # 75 requests/15min
 
         self.logger.info(f"Termos encontrados: {matched_terms}")
         return matched_terms
