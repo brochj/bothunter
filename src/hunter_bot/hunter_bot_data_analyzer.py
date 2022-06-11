@@ -41,22 +41,40 @@ class HunterBotDataAnalyzer(DataAnalyzer):
         ]
         return matched_hastags
 
-    def is_the_user_a_possible_bot(self, user, user_timeline) -> bool:
+    def is_the_user_a_possible_bot(
+        self,
+        user,
+        user_timeline,
+        check_avg_tweets=True,
+        check_timeline=True,
+        check_account_age=True,
+    ) -> bool:
         self.user = user
         self.account_age_days = utils.calc_days_until_today(user.created_at)
-        cd1 = self._analyse_total_tweets(user)
-        cd2 = True | self._is_the_last_20_tweets_are_retweets(user_timeline)
-        # cd3 = self.is_the_account_age_less_than_the_minimum_threshold(user)
-        self._print_bot_analysis(user, cd1, cd2)
-        return cd1 and cd2
 
-    def _analyse_total_tweets(self, user):
+        cd1 = False
+        cd2 = False
+        cd3 = False
+
+        if check_avg_tweets:
+            cd1 = self._analyze_avg_tweets(user)
+
+        if check_timeline:
+            cd2 = self._is_the_last_20_tweets_are_retweets(user_timeline)
+
+        if check_account_age:
+            cd3 = self.is_the_acc_age_less_than_the_minimum_threshold(user)
+
+        self._print_bot_analysis(user)
+        return cd1 and cd2 and cd3
+
+    def _analyze_avg_tweets(self, user):
         self.avg_tweets = self._avg_tweets_per_day(
             user.statuses_count, self.account_age_days
         )
         return self.avg_tweets > self.max_avg_tweets
 
-    def is_the_account_age_less_than_the_minimum_threshold(self):
+    def is_the_acc_age_less_than_the_minimum_threshold(self):
         return self.account_age_days < self.min_days
 
     def _is_the_last_20_tweets_are_retweets(self, user_timeline):
@@ -68,7 +86,7 @@ class HunterBotDataAnalyzer(DataAnalyzer):
         except ZeroDivisionError:
             return total_tweets
 
-    def _print_bot_analysis(self, user, cd1: bool, cd2: bool, cd3: bool = False):
+    def _print_bot_analysis(self, user):
         tweets_total = f"{user.statuses_count:,}".replace(",", ".")
         username = f"@ {user.screen_name}"
         account_age = f"{self.account_age_days}"
@@ -85,24 +103,3 @@ class HunterBotDataAnalyzer(DataAnalyzer):
             + (account_age.rjust(4) + " days (acc age)").center(colunm_size)
             + " | "
         )
-
-        max_str = 45
-
-        self.logger.debug("-" * max_str * 2)
-        self.logger.debug(
-            f"Account age: ".rjust(max_str) + f"{self.account_age_days} days"
-        )
-        self.logger.debug(
-            f"Tweets Total: ".rjust(max_str)
-            + f"{user.statuses_count:,}".replace(",", ".")
-        )
-        self.logger.debug(
-            f"Average Tweets: ".rjust(max_str) + f"{self.avg_tweets} tweets/day"
-        )
-        self.logger.debug(
-            f"Avg. Tweets > Max Avg. Tweets ({self.max_avg_tweets}): ".rjust(max_str)
-            + str(cd1)
-        )
-        # self.logger.debug(f"is_the_account_age_less_than_the_minimum_threshold: {cd3}")
-        # self.logger.debug(f"last_20_tweets_are_retweets: ".rjust(max_str) + str(cd2))
-        self.logger.debug("-" * max_str * 2)

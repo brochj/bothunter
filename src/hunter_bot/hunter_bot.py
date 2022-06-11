@@ -66,7 +66,7 @@ class HunterBot(Bot):
 
         for tweet in tweets:
             if self.user_has_been_analyzed(tweet.user.screen_name):
-                time.sleep(2)
+                time.sleep(4)
                 continue
 
             self.user = self.create_user(tweet.user)
@@ -79,14 +79,23 @@ class HunterBot(Bot):
 
                 # results.save_account(tweet.user.screen_name)
                 tweet_text = self.create_alert_tweet_message(tweet.user)
-                self.session.last_tweet = tweet_text
 
+                # Prevent duplicate tweet
+                if self.session.last_tweet == tweet_text:
+                    time.sleep(6)
+                    continue
+
+                self.session.last_tweet = tweet_text
                 self.tweet_alert(tweet_text)
                 time.sleep(100)
 
             except tweepy.errors.Unauthorized as e:
                 # User has blocked the bot
                 self.logger.error(e)
+
+                # Twitter blocks the bot
+                # 261 - Application cannot perform write actions.
+                # Contact Twitter Platform Operations through https://help.twitter.com/forms/platform.
             except tweepy.TweepyException as e:
                 print(e)
             except StopIteration:
@@ -139,8 +148,10 @@ class HunterBot(Bot):
         return result
 
     def is_possible_bot(self, user) -> bool:
-        timeline = self.actions.get_user_timeline(user.screen_name)
-        result = self.data_analyzer.is_the_user_a_possible_bot(user, timeline)
+        # timeline = self.actions.get_user_timeline(user.screen_name)
+        result = self.data_analyzer.is_the_user_a_possible_bot(
+            user, "change_here", check_timeline=False, check_account_age=False
+        )
         if result:
             self.logger.debug(f"@ {user.screen_name} é um possível bot!")
             self.session.add_possible_bot(user.screen_name)
