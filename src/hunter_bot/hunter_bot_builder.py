@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import configs.config as config
 import configs.credentials as credentials
@@ -13,9 +14,18 @@ from src.hunter_bot.hunting_session import HuntingSession
 
 class HunterBotBuilder(BotBuilder):
     def build_logger(self):
+        # self.logger = logging.getLogger("bot_hunter")
+        # self.logger.addHandler(logging.StreamHandler())
+        # self.logger.setLevel(logging.INFO)
+
         self.logger = logging.getLogger("bot_hunter")
-        self.logger.addHandler(logging.StreamHandler())
-        self.logger.setLevel(logging.INFO)
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            "%(asctime)s |%(levelname)-8s| %(message)s", "%H:%M:%S"
+        )
+        stdout_handler.setFormatter(formatter)
+        self.logger.addHandler(stdout_handler)
         return self
 
     def build_api(self):

@@ -1,4 +1,5 @@
 import random
+import sqlite3
 import time
 from datetime import datetime
 from logging import Logger
@@ -70,10 +71,17 @@ class HunterBot(Bot):
                 continue
 
             self.user = self.create_user(tweet.user)
-            self.writer.save(self.user)
+            try:
+                self.writer.save(self.user)
+            except sqlite3.IntegrityError:
+                # TODO create update user
+                self.logger.info(
+                    "Esse usuário já está no banco de dados...passando para o próximo"
+                )
 
             try:
                 if not self.is_possible_bot(tweet.user):
+
                     time.sleep(6)
                     continue
 
@@ -82,6 +90,7 @@ class HunterBot(Bot):
 
                 # Prevent duplicate tweet
                 if self.session.last_tweet == tweet_text:
+                    self.logger.info("Último tweet enviado é igual...não vou tweetar")
                     time.sleep(6)
                     continue
 
@@ -141,13 +150,15 @@ class HunterBot(Bot):
     def user_has_been_analyzed(self, user: str) -> bool:
         result = user in self.session.analyzed_accounts
         if result:
-            self.logger.debug(f"Esse usário (@ {user}) já foi analisado nessa sessão.")
-            self.logger.debug("Passando para o próximo...")
+            self.logger.debug(
+                f"Esse usário (@ {user}) já foi analisado nessa sessão...passando para o próximo"
+            )
         else:
             self.session.add_analyzed_account(user)
         return result
 
     def is_possible_bot(self, user) -> bool:
+        self.logger.debug(f"Checando se @ {user.screen_name} é um bot...")
         # timeline = self.actions.get_user_timeline(user.screen_name)
         result = self.data_analyzer.is_the_user_a_possible_bot(
             user, "change_here", check_timeline=False, check_account_age=False
@@ -155,6 +166,8 @@ class HunterBot(Bot):
         if result:
             self.logger.debug(f"@ {user.screen_name} é um possível bot!")
             self.session.add_possible_bot(user.screen_name)
+        else:
+            self.logger.debug(f"@ {user.screen_name} não é um bot...")
         return result
 
     def create_alert_tweet_message(self, user) -> str:
@@ -169,9 +182,9 @@ class HunterBot(Bot):
         return message
 
     def tweet_alert(self, tweet_text: str) -> None:
-        self.actions.tweet(tweet_text)
-
         self.logger.info("#" * 40)
         self.logger.info("Tweet sent !".center(40))
         self.logger.info(tweet_text)
         self.logger.info("#" * 40)
+
+        self.actions.tweet(tweet_text)

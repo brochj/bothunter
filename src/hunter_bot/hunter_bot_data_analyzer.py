@@ -52,21 +52,27 @@ class HunterBotDataAnalyzer(DataAnalyzer):
         self.user = user
         self.account_age_days = utils.calc_days_until_today(user.created_at)
 
-        cd1 = False
-        cd2 = False
-        cd3 = False
+        cd_avg_tweets = False
+        cd_last_20 = False
+        cd_acc_age = False
 
         if check_avg_tweets:
-            cd1 = self._analyze_avg_tweets(user)
+            cd_avg_tweets = self._analyze_avg_tweets(user)
 
         if check_timeline:
-            cd2 = self._is_the_last_20_tweets_are_retweets(user_timeline)
+            cd_last_20 = self._is_the_last_20_tweets_are_retweets(user_timeline)
 
         if check_account_age:
-            cd3 = self.is_the_acc_age_less_than_the_minimum_threshold(user)
+            cd_acc_age = self.is_the_acc_age_less_than_the_minimum_threshold(user)
 
         self._print_bot_analysis(user)
-        return cd1 and cd2 and cd3
+
+        if check_avg_tweets and check_timeline and check_account_age:
+            return cd_avg_tweets and cd_last_20 and cd_acc_age
+        if check_avg_tweets and check_timeline:
+            return cd_avg_tweets and cd_last_20
+        if check_avg_tweets:
+            return cd_avg_tweets
 
     def _analyze_avg_tweets(self, user):
         self.avg_tweets = self._avg_tweets_per_day(
